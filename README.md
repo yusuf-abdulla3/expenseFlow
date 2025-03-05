@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Expense Processor - AI-Powered Expense Management
 
-## Getting Started
+Expense Processor is a web application designed to help users efficiently categorize and manage their expenses using AI. It provides insights through charts and summaries, tailored to Canadian tax principles.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- 📊 **AI-Powered Categorization**: Automatically categorize expenses using AI with knowledge of Canadian tax principles.
+- 🗂️ **Customizable Categories**: Add, view, or remove spending categories.
+- 🌍 **Province-Based Tax Calculation**: Calculate taxes based on the selected Canadian province.
+- 📝 **Expense Management**: Edit, save, and download expenses as CSV files.
+- 📈 **Visual Insights**: View expenses by category through charts and summaries.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone this repository**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   git clone https://github.com/yourusername/expense-processor.git
+   cd expense-processor
+   ```
 
-## Learn More
+2. **Install dependencies**
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Environment setup**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   - Create a `.env` file in the root directory.
+   - Add your OpenAI API key:
 
-## Deploy on Vercel
+     ```plaintext
+     OPENAI_API_KEY=your_openai_api_key_here
+     ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Run the application**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   npm run dev
+   ```
+
+   Open your browser and navigate to `http://localhost:3000` to view the application.
+
+## Usage
+
+- **Upload your expense files**: Use the file upload feature to add your expenses.
+- **Select your province**: Choose your province to apply the correct tax rate.
+- **Process expenses**: Click "Process Files" to categorize and calculate taxes.
+- **Edit and download**: Make any necessary edits and download your expenses as a CSV file.
+
+## Configuration
+
+Before using the application, ensure you have:
+
+- An OpenAI API key for AI-powered categorization.
+- Correctly set up your environment variables in the `.env` file.
+
+## Tech Stack
+
+- **TypeScript**
+- **React**
+- **Next.js**
+- **OpenAI GPT-4o**
+- **Tailwind CSS**
+
+## Project Structure
+
+- **`src/app`**: Main application components and pages.
+- **`src/components/ui`**: UI components used throughout the application.
+- **`src/lib`**: Utility functions and services, including AI service integration.
+- **`tailwind.config.ts`**: Tailwind CSS configuration.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For questions or feedback, please contact [your email or GitHub profile].
