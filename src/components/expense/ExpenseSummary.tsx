@@ -12,7 +12,7 @@ import { useState } from 'react'
 interface ExpenseSummaryProps {
   processedData: Expense[]
   mileageInfo: MileageInfo | null
-  calculateTotals: (data: Expense[]) => { total: number, byCategory: Record<string, number> }
+  calculateTotals: (data?: Expense[]) => { amount: number, hst: number, net: number }
 }
 
 interface ChartDataPoint {
@@ -29,13 +29,19 @@ export function ExpenseSummary({ processedData, mileageInfo, calculateTotals }: 
     return null
   }
 
-  const { total, byCategory } = calculateTotals(processedData)
+  // Calculate totals and group expenses by category
+  const totals = calculateTotals(processedData)
+  
+  // Group expenses by category for charts
+  const byCategory: Record<string, number> = processedData.reduce((acc, expense) => {
+    const category = expense.glAccount || 'Uncategorized'
+    acc[category] = (acc[category] || 0) + expense.amount
+    return acc
+  }, {} as Record<string, number>)
 
-  const prepareChartData = (data: Expense[]): ChartDataPoint[] => {
-    const { byCategory } = calculateTotals(data)
-    
+  const prepareChartData = (): ChartDataPoint[] => {
     // Convert to array and sort by amount (descending)
-    const chartData = Object.entries(byCategory)
+    const chartData = Object.entries(byCategory || {})
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
     
@@ -60,25 +66,38 @@ export function ExpenseSummary({ processedData, mileageInfo, calculateTotals }: 
     
     setIsSaving(true)
     try {
+      console.log('Starting save to Supabase with user ID:', user.id)
+      
+      if (!user.id) {
+        throw new Error('User ID is missing or invalid')
+      }
+      
       const csvContent = generateCSV(processedData, mileageInfo, byCategory)
       const filename = `Expense-Report-${new Date().toLocaleDateString('en-CA')}`
       
-      const recordId = await saveCSVToSupabase(csvContent, user.id, { filename })
-      
-      if (recordId) {
-        toast.success('Expense report saved successfully')
-      } else {
-        toast.error('Failed to save expense report')
+      try {
+        const recordId = await saveCSVToSupabase(csvContent, user.id, { filename })
+        
+        if (recordId) {
+          toast.success('Expense report saved successfully')
+        } else {
+          throw new Error('Failed to receive record ID after saving')
+        }
+      } catch (saveError: any) {
+        console.error('Detailed save error:', saveError)
+        toast.error(`Save failed: ${saveError.message || 'Unknown error'}`)
+        throw saveError
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving expense report:', error)
-      toast.error('An error occurred while saving expense report')
+      toast.error(`An error occurred: ${error.message || 'Unknown error'}`)
     } finally {
       setIsSaving(false)
     }
   }
 
-  const chartData = prepareChartData(processedData)
+  const chartData = prepareChartData()
+  const totalAmount = totals.amount || 0
 
   return (
     <Card className="mt-8">
@@ -105,30 +124,33 @@ export function ExpenseSummary({ processedData, mileageInfo, calculateTotals }: 
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h3 className="text-lg font-semibold mb-4">Total Expenses</h3>
             <p className="text-2xl font-bold mb-8">
-              ${total.toFixed(2)}
+              ${totalAmount.toFixed(2)}
             </p>
             
             <h3 className="text-lg font-semibold mb-4">Expenses by Category</h3>
             <div className="space-y-2">
-              {Object.entries(byCategory).map(([category, amount]) => (
+              {Object.entries(byCategory || {}).map(([category, amount]) => (
                 <div key={category} className="flex justify-between">
                   <span>{category}</span>
                   <span>${amount.toFixed(2)}</span>
                 </div>
               ))}
             </div>
+
+            <div className="h-[300px] mt-6">
+              <ExpensePieChart data={chartData} />
+            </div>
           </div>
 
-          <div className="md:col-span-1">
-            <ExpensePieChart data={chartData} />
-          </div>
-
-          <div className="md:col-span-2">
-            <ExpenseBarChart data={chartData} />
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Expense Distribution</h3>
+            <div className="h-[450px] mt-2">
+              <ExpenseBarChart data={chartData} />
+            </div>
           </div>
         </div>
 

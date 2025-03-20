@@ -14,6 +14,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [fileType, setFileType] = useState('pdf');
   
   // Call useExpenses hook before any conditional returns
   const {
@@ -25,6 +26,11 @@ export default function Dashboard() {
     error,
     isEditing,
     categories,
+    occupation,
+    setOccupation,
+    province,
+    setProvince,
+    updateMileageInfo,
     addCategory,
     removeCategory,
     handleFileUpload,
@@ -68,6 +74,12 @@ export default function Dashboard() {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
+          <CategoryManager 
+            categories={categories}
+            addCategory={addCategory}
+            removeCategory={removeCategory}
+          />
+          
           <FileUploader 
             files={files}
             handleFileUpload={handleFileUpload}
@@ -77,15 +89,12 @@ export default function Dashboard() {
             processedData={processedData}
             mileageInfo={mileageInfo}
             calculateTotals={calculateTotals}
+            fileType={fileType}
+            setFileType={setFileType}
           />
           
           {processedData.length > 0 && (
             <>
-              <CategoryManager 
-                categories={categories}
-                addCategory={addCategory}
-                removeCategory={removeCategory}
-              />
               <ExpenseList 
                 processedData={processedData}
                 isEditing={isEditing}
@@ -106,7 +115,14 @@ export default function Dashboard() {
         </div>
         
         <div>
-          <ProfileForm />
+          <ProfileForm 
+            occupation={occupation}
+            setOccupation={setOccupation}
+            mileageInfo={mileageInfo}
+            updateMileageInfo={updateMileageInfo}
+            province={province}
+            setProvince={setProvince}
+          />
           <SavedExpenses />
         </div>
       </div>

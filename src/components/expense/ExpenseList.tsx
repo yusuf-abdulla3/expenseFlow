@@ -15,7 +15,7 @@ interface ExpenseListProps {
   saveChanges: () => void
   handleEdit: (index: number, field: keyof Expense, value: string | number | boolean) => void
   mileageInfo: any
-  calculateTotals: (data: Expense[]) => { total: number, byCategory: Record<string, number> }
+  calculateTotals: (data?: Expense[]) => { amount: number, hst: number, net: number }
 }
 
 export function ExpenseList({
@@ -30,7 +30,13 @@ export function ExpenseList({
 }: ExpenseListProps) {
   const handleDownload = () => {
     const dataToExport = isEditing ? editingData : processedData
-    const { byCategory } = calculateTotals(dataToExport)
+    // Generate byCategory data from expenses
+    const byCategory = dataToExport.reduce((acc, expense) => {
+      const category = expense.glAccount || 'Uncategorized'
+      acc[category] = (acc[category] || 0) + expense.amount
+      return acc
+    }, {} as Record<string, number>)
+    
     const csvContent = generateCSV(dataToExport, mileageInfo, byCategory)
     downloadCSV(csvContent)
   }

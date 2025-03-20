@@ -58,28 +58,47 @@ export async function saveCSVToSupabase(
   csvContent: string, 
   userId: string, 
   metadata: Record<string, any> = {}
-): Promise<string | null> {
+): Promise<string> {
+  if (!csvContent) {
+    throw new Error('No CSV content provided')
+  }
+  
+  if (!userId) {
+    throw new Error('No user ID provided')
+  }
+  
+  console.log('Saving CSV to Supabase for user:', userId)
+  
   try {
     const filename = `expenses-${new Date().toISOString().split('T')[0]}.csv`
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     
     // Save the file to storage
+    console.log('Calling saveFileToStorage...')
     const fileUrl = await saveFileToStorage(blob, filename, userId)
     
     if (!fileUrl) {
-      throw new Error('Failed to save file to storage')
+      throw new Error('Failed to save file to storage - no URL returned')
     }
     
+    console.log('File saved to storage, URL:', fileUrl)
+    
     // Save the record to the database
+    console.log('Calling saveExpenseRecord...')
     const recordId = await saveExpenseRecord(userId, fileUrl, {
       ...metadata,
       filename,
       timestamp: new Date().toISOString()
     })
     
+    if (!recordId) {
+      throw new Error('Failed to save expense record - no ID returned')
+    }
+    
+    console.log('Expense record saved successfully, ID:', recordId)
     return recordId
-  } catch (error) {
-    console.error('Error saving CSV to Supabase:', error)
-    return null
+  } catch (error: any) {
+    console.error('Error in saveCSVToSupabase:', error)
+    throw error // Propagate the error to the caller
   }
 } 

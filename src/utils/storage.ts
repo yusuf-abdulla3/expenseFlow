@@ -13,7 +13,33 @@ export async function saveFileToStorage(
   userId: string
 ): Promise<string | null> {
   try {
+    // Validate parameters
+    if (!file) throw new Error('No file provided')
+    if (!path) throw new Error('No path provided')
+    if (!userId) throw new Error('No userId provided')
+    
+    console.log('Saving file to storage:', { path, userId, fileSize: file.size })
+    
     const filename = `${userId}/${path}`
+    
+    // Check if we can access the bucket (no need to list all buckets)
+    try {
+      const { data, error } = await supabase.storage
+        .from('expense-files')
+        .list('')
+        
+      if (error) {
+        console.error('Error accessing bucket:', error)
+        throw error
+      }
+      
+      console.log('Successfully accessed bucket')
+    } catch (error) {
+      console.error('Error checking bucket access:', error)
+      throw new Error('Unable to access storage bucket')
+    }
+    
+    // Upload the file
     const { data, error } = await supabase.storage
       .from('expense-files')
       .upload(filename, file, {
@@ -22,19 +48,26 @@ export async function saveFileToStorage(
       })
 
     if (error) {
-      console.error('Error saving file:', error)
+      console.error('Error uploading file:', error)
       throw error
     }
+    
+    console.log('File uploaded successfully:', data)
 
     // Get the public URL
     const { data: urlData } = supabase.storage
       .from('expense-files')
       .getPublicUrl(filename)
-
+      
+    if (!urlData || !urlData.publicUrl) {
+      throw new Error('Failed to get public URL')
+    }
+    
+    console.log('Generated public URL:', urlData.publicUrl)
     return urlData.publicUrl
   } catch (error) {
     console.error('Error saving file to storage:', error)
-    return null
+    throw error // Rethrow so the caller can handle it
   }
 }
 
@@ -51,14 +84,21 @@ export async function saveExpenseRecord(
   metadata: Record<string, any>
 ): Promise<string | null> {
   try {
+    // Validate parameters
+    if (!userId) throw new Error('No userId provided')
+    if (!fileUrl) throw new Error('No fileUrl provided')
+    
+    console.log('Saving expense record:', { userId, fileUrl, metadata })
+    
     const currentYear = new Date().getFullYear();
+    const documentName = metadata.filename || `Expense Report ${new Date().toLocaleDateString()}`
     
     const { data, error } = await supabase
       .from('tax_documents')
       .insert([
         {
           user_id: userId,
-          document_name: metadata.filename || `Expense Report ${new Date().toLocaleDateString()}`,
+          document_name: documentName,
           document_type: 'expense_report',
           document_url: fileUrl,
           tax_year: currentYear,
@@ -72,10 +112,15 @@ export async function saveExpenseRecord(
       console.error('Error saving tax document:', error)
       throw error
     }
-
-    return data?.[0]?.id || null
+    
+    if (!data || data.length === 0) {
+      throw new Error('No data returned after insert')
+    }
+    
+    console.log('Expense record saved successfully:', data[0])
+    return data[0].id
   } catch (error) {
     console.error('Error saving tax document:', error)
-    return null
+    throw error // Rethrow so the caller can handle it
   }
 } 
