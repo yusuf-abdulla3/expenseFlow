@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { categorizeExpense } from '@/lib/ai-service'
-import pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js'
+import { categorizeExpense } from '@/utils/categorize'
+import pdfParse from 'pdf-parse'
 
 interface RawExpense {
   date: string
@@ -13,31 +13,14 @@ interface RawExpense {
 
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   try {
-    const data = new Uint8Array(buffer)
-    const loadingTask = pdfjsLib.getDocument({
-      data,
-      isEvalSupported: false,
-      useSystemFonts: true
-    })
+    // Convert ArrayBuffer to Buffer for pdf-parse
+    const data = Buffer.from(buffer)
     
-    const pdf = await loadingTask.promise
-    let fullText = ''
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i)
-      const content = await page.getTextContent()
-      const text = content.items
-        .map((item) => {
-          if ('str' in item) {
-            return item.str
-          }
-          return ''
-        })
-        .join(' ')
-      fullText += text + '\n'
-    }
-
-    return fullText
+    // Use pdf-parse to extract text
+    const result = await pdfParse(data)
+    
+    // Return the extracted text
+    return result.text
   } catch (error) {
     console.error('Error extracting text from PDF:', error)
     throw new Error('Failed to extract text from PDF')
@@ -92,7 +75,13 @@ export async function POST(req: Request) {
       console.log('Parsed expenses:', rawExpenses) // Debug log
       
       for (const expense of rawExpenses) {
-        const { category, isUnsure } = await categorizeExpense(expense.description)
+        // Default categories if not provided
+        const defaultCategories = [
+          'Personal', 'Food', 'Gas', 'Car Service', 'Car Cleaning', 
+          'Office', 'Insurance', 'Telephone', 'Parking', 
+          'Professional Development', 'Health', 'Entertainment', 'Admin'
+        ]
+        const { category, isUnsure } = await categorizeExpense(expense.description, '', defaultCategories)
         processedData.push({
           date: expense.date,
           paidBy: expense.paidBy,
